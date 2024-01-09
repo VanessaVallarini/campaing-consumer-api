@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  campaing-db:
+    image: campaing-db
+    container_name: campaing-db
+    ports:
+      - 5432:5432
+    build: 
+      context: .
+      args:
+        - LOCAL_SQL=./postgres/scripts/local
+        - MIGRATION_SQL=./postgres/scripts/migrations
+      dockerfile: ./postgres/Dockerfile
