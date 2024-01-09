@@ -1,11 +1,11 @@
 package main
 
 import (
+	"campaing-comsumer-service/internal/config"
 	"fmt"
 )
 
 func main() {
-
-	fmt.Println("main")
-
+	cfg := config.GetConfig()
+	fmt.Println(cfg)
 }

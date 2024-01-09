@@ -1,0 +1,12 @@
+database:
+  host: localhost
+  username: postgres
+  database: campaing-consumer-api
+  port: 5432
+  password: 12345
+  conn:
+    min: 5
+    max: 20
+    lifetime: 120s
+    idletime: 120s
+time-location: "America/Sao_Paulo"
