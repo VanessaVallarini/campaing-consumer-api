@@ -4,11 +4,15 @@ import (
 	"campaing-comsumer-service/internal/model"
 	"context"
 	"os"
-	"strings"
 	"sync"
 
+	"github.com/integralist/go-findroot/find"
 	"github.com/lockp111/go-easyzap"
 	"github.com/spf13/viper"
+)
+
+const (
+	ENV_PROFILE_LOCAL = "local"
 )
 
 var (
@@ -16,57 +20,50 @@ var (
 	config  model.Config
 )
 
+func initConfig() {
+	envProfile := os.Getenv("ENV_PROFILE")
+	if envProfile == ENV_PROFILE_LOCAL {
+		setEnvsByFile()
+	}
+	viper.AutomaticEnv()
+}
+
+func setEnvsByFile() {
+	root, _ := find.Repo()
+
+	viper.SetConfigName("config")
+	viper.SetConfigType("env")
+	viper.AddConfigPath(root.Path + "/build/package/env/local")
+
+	if err := viper.ReadInConfig(); err != nil {
+		easyzap.Panic(context.Background(), err, "failed reading config file")
+	}
+}
+
 func GetConfig() model.Config {
 	runOnce.Do(func() {
-		viperConfig := initConfig()
-
+		initConfig()
 		config = model.Config{
-			AppName:      viperConfig.GetString("app.name"),
-			ServerHost:   viperConfig.GetString("server.host"),
-			MetaHost:     viperConfig.GetString("meta.host"),
-			TimeLocation: viperConfig.GetString("time-location"),
+			AppName:      viper.GetString("APPLICATION_NAME"),
+			ServerPort:   viper.GetString("SERVER_PORT"),
+			HealthPort:   viper.GetString("HEALTH_PORT"),
+			TimeLocation: viper.GetString("TIME_LOCATION"),
 			Database: model.DatabaseConfig{
-				Host:     viperConfig.GetString("database.host"),
-				Username: viperConfig.GetString("database.username"),
-				Database: viperConfig.GetString("database.database"),
-				Port:     viperConfig.GetInt("database.port"),
+				Host:     viper.GetString("DATABASE_HOST"),
+				Username: viper.GetString("DATABASE_USERNAME"),
+				Database: viper.GetString("DATABASE_NAME"),
+				Port:     viper.GetInt("DATABASE_PORT"),
 				Conn: model.Conn{
-					Min:      viperConfig.GetInt("database.conn.min"),
-					Max:      viperConfig.GetInt("database.conn.max"),
-					Lifetime: viperConfig.GetString("database.conn.lifetime"),
-					IdleTime: viperConfig.GetString("database.conn.idletime"),
+					Min:      viper.GetInt("DATABASE_CON_MIN"),
+					Max:      viper.GetInt("DATABASE_CON_MAX"),
+					Lifetime: viper.GetString("DATABASE_CON_LIFETIME"),
+					IdleTime: viper.GetString("DATABASE_CON_IDLETIME"),
 				},
 			},
 		}
 		setEnvValues()
 	})
 	return config
-}
-
-func initConfig() viper.Viper {
-	config := viper.New()
-
-	initDefaults(config)
-	environment := os.Getenv("ENV_PROFILE")
-
-	config.SetConfigType("yaml")
-	config.AddConfigPath("./internal/config")
-	config.SetConfigName(environment)
-
-	err := config.MergeInConfig()
-	if err != nil {
-		easyzap.Fatal(context.TODO(), err, "error reading application config file.")
-	}
-
-	return *config
-}
-
-func initDefaults(config *viper.Viper) {
-	config.SetDefault("app.name", "campaing-consumer-api")
-	config.SetDefault("server.host", "0.0.0.0:8080")
-	config.SetDefault("meta.host", "0.0.0.0:8081")
-	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	config.AutomaticEnv()
 }
 
 func setEnvValues() {

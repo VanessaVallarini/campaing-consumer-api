@@ -2,24 +2,24 @@ package model
 
 type Config struct {
 	AppName      string
-	ServerHost   string
-	MetaHost     string
+	ServerPort   string
+	HealthPort   string
 	TimeLocation string
-	Database     DatabaseConfig `mapstructure:"database"`
+	Database     DatabaseConfig
 }
 
 type DatabaseConfig struct {
-	Host     string `mapstructure:"host"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	Database string `mapstructure:"database"`
-	Port     int    `mapstructure:"port"`
-	Conn     Conn   `mapstructure:"conn"`
+	Host     string
+	Username string
+	Password string
+	Database string
+	Port     int
+	Conn     Conn
 }
 
 type Conn struct {
-	Min      int    `mapstructure:"min"`
-	Max      int    `mapstructure:"max"`
-	Lifetime string `mapstructure:"lifetime"`
-	IdleTime string `mapstructure:"idletime"`
+	Min      int
+	Max      int
+	Lifetime string
+	IdleTime string
 }

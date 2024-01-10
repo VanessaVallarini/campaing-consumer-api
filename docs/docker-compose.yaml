@@ -1,9 +1,0 @@
-version: '3'
-
-services:
-  mingrammer:
-    image: pedromol/mingrammer
-    working_dir: /usr/app
-    command: find . -name "*.py" -exec python {} \;
-    volumes:
-      - ./:/usr/app
