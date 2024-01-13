@@ -21,7 +21,7 @@ type Db struct {
 }
 
 func NewDb(ctx context.Context, cfg config.Config) (*Db, error) {
-	db, err := sql.Open(cfg.Database.PostgresDriver, cfg.Database.DatabaseConnStr)
+	db, err := sql.Open(cfg.DatabaseConfig.PostgresDriver, cfg.DatabaseConfig.DatabaseConnStr)
 	if err != nil {
 		return nil, err
 	}

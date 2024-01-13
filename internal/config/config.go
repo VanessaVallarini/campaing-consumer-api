@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/integralist/go-findroot/find"
 	"github.com/lockp111/go-easyzap"
 	"github.com/spf13/viper"
@@ -25,7 +26,8 @@ type Config struct {
 	ServerPort   string
 	HealthPort   string
 	TimeLocation string
-	Database     DatabaseConfig
+	DatabaseConfig
+	AwsConfig
 }
 
 type DatabaseConfig struct {
@@ -41,6 +43,13 @@ type DatabaseConfig struct {
 
 type Conn struct {
 	Max int
+}
+
+type AwsConfig struct {
+	Url           string
+	Region        string
+	QueueCampaing string
+	Credentials   aws.AnonymousCredentials
 }
 
 func initConfig() {
@@ -71,7 +80,7 @@ func GetConfig() Config {
 			ServerPort:   viper.GetString("SERVER_PORT"),
 			HealthPort:   viper.GetString("HEALTH_PORT"),
 			TimeLocation: viper.GetString("TIME_LOCATION"),
-			Database: DatabaseConfig{
+			DatabaseConfig: DatabaseConfig{
 				PostgresDriver: viper.GetString("DATABASE_POSTGRESDRIVER"),
 				User:           viper.GetString("DATABASE_USER"),
 				Host:           viper.GetString("DATABASE_HOST"),
@@ -81,16 +90,21 @@ func GetConfig() Config {
 					Max: viper.GetInt("DATABASE_CON_MAX"),
 				},
 			},
+			AwsConfig: AwsConfig{
+				Url:           viper.GetString("AWS_URL"),
+				Region:        viper.GetString("AWS_REGION"),
+				QueueCampaing: viper.GetString("AWS_QUEUE_CAMPAING"),
+			},
 		}
 		setEnvValues()
-		config.Database.DatabaseConnStr = buildDatabaseConnString(config.Database)
+		config.DatabaseConfig.DatabaseConnStr = buildDatabaseConnString(config.DatabaseConfig)
 	})
 	return config
 }
 
 func setEnvValues() {
 	if len(os.Getenv("DB_PASS_CAMPAING_CONSUMER_API")) > 0 {
-		config.Database.Password = os.Getenv("DB_PASS_CAMPAING_CONSUMER_API")
+		config.DatabaseConfig.Password = os.Getenv("DB_PASS_CAMPAING_CONSUMER_API")
 	}
 }
 

@@ -1,4 +1,4 @@
-version: "3.9"
+version: "2.1"
 services:
   campaing-db:
     image: campaing-db
@@ -11,3 +11,20 @@ services:
         - LOCAL_SQL=./postgres/scripts/local
         - MIGRATION_SQL=./postgres/scripts/migrations
       dockerfile: ./postgres/Dockerfile
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,sns
+      - DEBUG=true
+      - DATA_DIR=${DATA_DIR- }
+      - DEFAULT_REGION=sa-east-2
+      - PORT_WEB_UI=${PORT_WEB_UI- }
+      - LAMBDA_EXECUTOR=docker
+      - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOSTNAME_EXTERNAL=localstack
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
