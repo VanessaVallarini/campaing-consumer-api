@@ -6,16 +6,16 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type CampaingDBModel struct {
-	Id          uuid.UUID `MyTag:"id"`
-	UserId      uuid.UUID `MyTag:"user_id"`
-	SlugId      uuid.UUID `MyTag:"slug_id"`
-	MerchantId  uuid.UUID `MyTag:"merchant_id"`
-	CreatedAt   time.Time `MyTag:"created_at"`
-	UpdatedAt   time.Time `MyTag:"updated_at"`
-	Active      bool      `MyTag:"active"`
-	Lat         float64   `MyTag:"lat"`
-	Long        float64   `MyTag:"long"`
-	Clicks      int       `MyTag:"clicks"`
-	Impressions int       `MyTag:"impressions"`
+type Campaing struct {
+	Id          uuid.UUID
+	UserId      uuid.UUID
+	SlugId      uuid.UUID
+	MerchantId  uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Active      bool
+	Lat         float64
+	Long        float64
+	Clicks      int
+	Impressions int
 }

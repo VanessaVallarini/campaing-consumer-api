@@ -19,8 +19,6 @@ func main() {
 		easyzap.Panic(err)
 
 	}
-	db.Read()
-
 	defer db.Close()
 
 	fmt.Println(cfg)
