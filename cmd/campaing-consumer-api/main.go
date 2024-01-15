@@ -46,9 +46,7 @@ func main() {
 	c.Clicks = 0
 	c.Impressions = 0
 
-	queue := "queue_campaing"
-	//queue := config.GetConfig().AwsConfig.QueueCampaing
-	//queueUrl := awsClient.GetQueueURL(ctx, queue)
+	queue := config.GetConfig().AwsConfig.QueueCampaing
 	CampaignService.Create(ctx, &c, &queue)
 
 	fmt.Println(cfg)

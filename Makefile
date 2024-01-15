@@ -6,11 +6,11 @@ compose-infra-up:
 compose-infra-down:
 	docker-compose -f ./build/package/docker/docker-compose.yml --profile infra --profile app down
 
-terraform-init:
-	terraform ./build/package/docker/localstack init
+#terraform init
 
-terraform-plan:
-	terraform ./build/package/docker/localstack plan
+#terraform plan
 
-terraform-apply:
-	terraform ./build/package/docker/localstack apply
+#terraform apply
+
+#export AWS_SECRET_ACCESS_KEY=teste
+#export AWS_ACCESS_KEY_ID=teste

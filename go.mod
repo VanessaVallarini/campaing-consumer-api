@@ -20,18 +20,15 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.7 // indirect
 	github.com/aws/smithy-go v1.19.0 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.49.20
 	github.com/aws/aws-sdk-go-v2/config v1.26.3
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.29.7
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.5.0
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/integralist/go-findroot v0.0.0-20160518114804-ac90681525dc

@@ -13,7 +13,6 @@ import (
 
 type IAwsClient interface {
 	SendMessage(ctx context.Context, data interface{}, queueUrl *string) error
-	GetQueueURL(ctx context.Context, queue string) *string
 }
 
 type AwsClient struct {
@@ -40,18 +39,6 @@ func NewAwsClient(ctx context.Context, awsURL, region string) *AwsClient {
 	return &AwsClient{
 		client: sqs.NewFromConfig(cfg),
 	}
-}
-
-func (a *AwsClient) GetQueueURL(ctx context.Context, queue string) *string {
-	input := &sqs.GetQueueUrlInput{
-		QueueName: &queue,
-	}
-	resultGet, err := a.client.GetQueueUrl(ctx, input)
-	if err != nil {
-		log.Printf("error getting the queue URL: %v", err)
-	}
-
-	return resultGet.QueueUrl
 }
 
 func (a *AwsClient) SendMessage(ctx context.Context, data interface{}, queue *string) error {
