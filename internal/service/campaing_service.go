@@ -4,6 +4,7 @@ import (
 	"campaing-comsumer-service/internal/db"
 	"campaing-comsumer-service/internal/model"
 	"context"
+	//"github.com/Vanessa.Vallarini/address-api/pkg/api/proto/v1"
 )
 
 type ICampaignService interface {

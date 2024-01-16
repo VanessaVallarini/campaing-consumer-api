@@ -19,7 +19,7 @@ type Db struct {
 	conn *sql.DB
 }
 
-func NewDb(cfg config.Config) *Db {
+func NewDbClient(cfg config.Config) *Db {
 	db, err := sql.Open(cfg.DatabaseConfig.PostgresDriver, cfg.DatabaseConfig.DatabaseConnStr)
 	if err != nil {
 		easyzap.Panicf("configuration error: %v", err)
