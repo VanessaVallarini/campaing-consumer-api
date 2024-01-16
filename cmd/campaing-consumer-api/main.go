@@ -4,6 +4,7 @@ import (
 	"campaing-comsumer-service/internal/client"
 	"campaing-comsumer-service/internal/config"
 	"campaing-comsumer-service/internal/db"
+	"campaing-comsumer-service/internal/listener"
 	"campaing-comsumer-service/internal/model"
 	"campaing-comsumer-service/internal/service"
 	"context"
@@ -19,19 +20,14 @@ func main() {
 
 	cfg := config.GetConfig()
 
-	db, err := db.NewDb(ctx, cfg)
-	if err != nil {
-		easyzap.Panic(err)
-
-	}
+	db := db.NewDb(cfg)
 	defer db.Close()
 
-	awsClient := client.NewAwsClient(ctx, cfg.AwsConfig.Url, cfg.AwsConfig.Region)
+	awsClient := client.NewAwsClient(cfg.AwsConfig.Url, cfg.AwsConfig.Region)
 	if awsClient == nil {
 		easyzap.Panic("failed creating aws client")
 	}
-
-	CampaignService := service.NewCampaignService(awsClient)
+	campaingService := service.NewCampaignService(db)
 
 	c := model.Campaing{}
 	c.Id = uuid.New()
@@ -47,7 +43,12 @@ func main() {
 	c.Impressions = 0
 
 	queue := config.GetConfig().AwsConfig.QueueCampaing
-	CampaignService.Create(ctx, &c, &queue)
+	nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	for range nums {
+		awsClient.SendMessage(ctx, &c, &queue)
+	}
+
+	listener.EventTrackingListener(ctx, awsClient, campaingService, queue)
 
 	fmt.Println(cfg)
 }

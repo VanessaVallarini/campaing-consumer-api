@@ -3,7 +3,6 @@ package client
 import (
 	"campaing-comsumer-service/internal/util"
 	"context"
-	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
@@ -13,13 +12,15 @@ import (
 
 type IAwsClient interface {
 	SendMessage(ctx context.Context, data interface{}, queueUrl *string) error
+	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error)
+	DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error)
 }
 
 type AwsClient struct {
 	client *sqs.Client
 }
 
-func NewAwsClient(ctx context.Context, awsURL, region string) *AwsClient {
+func NewAwsClient(awsURL, region string) *AwsClient {
 	// customResolver is required here since we use localstack and need to point the aws url to localhost.
 	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
@@ -31,9 +32,9 @@ func NewAwsClient(ctx context.Context, awsURL, region string) *AwsClient {
 	})
 
 	// load the default aws config along with custom resolver.
-	cfg, err := awsConfig.LoadDefaultConfig(ctx, awsConfig.WithEndpointResolverWithOptions(customResolver))
+	cfg, err := awsConfig.LoadDefaultConfig(context.Background(), awsConfig.WithEndpointResolverWithOptions(customResolver))
 	if err != nil {
-		log.Fatalf("configuration error: %v", err)
+		easyzap.Panicf("configuration error: %v", err)
 	}
 
 	return &AwsClient{
@@ -57,10 +58,10 @@ func (a *AwsClient) SendMessage(ctx context.Context, data interface{}, queue *st
 	return nil
 }
 
-func (a *AwsClient) ReceiveMessage(ctx context.Context, params sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
-	return a.client.ReceiveMessage(ctx, &params)
+func (a *AwsClient) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
+	return a.client.ReceiveMessage(ctx, params)
 }
 
-func (a *AwsClient) DeleteMessage(ctx context.Context, params sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
-	return a.client.DeleteMessage(ctx, &params)
+func (a *AwsClient) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+	return a.client.DeleteMessage(ctx, params)
 }

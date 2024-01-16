@@ -1,31 +1,25 @@
 package service
 
 import (
-	"campaing-comsumer-service/internal/client"
+	"campaing-comsumer-service/internal/db"
 	"campaing-comsumer-service/internal/model"
 	"context"
-
-	"github.com/lockp111/go-easyzap"
 )
 
 type ICampaignService interface {
-	Create(ctx context.Context, campaing *model.Campaing) (int, *string, error)
+	CreateHandler(ctx context.Context, campaing *model.Campaing) error
 }
 
 type CampaignService struct {
-	awsClient client.IAwsClient
+	db db.IDb
 }
 
-func NewCampaignService(awsClient client.IAwsClient) *CampaignService {
+func NewCampaignService(db db.IDb) *CampaignService {
 	return &CampaignService{
-		awsClient: awsClient,
+		db: db,
 	}
 }
 
-func (c CampaignService) Create(ctx context.Context, campaing *model.Campaing, queue *string) error {
-	err := c.awsClient.SendMessage(ctx, campaing, queue)
-	if err != nil {
-		easyzap.Error(ctx, err, "Error to send campaing to queue for merchant_id: %v", campaing.MerchantId)
-	}
+func (c CampaignService) CreateHandler(ctx context.Context, campaing *model.Campaing) error {
 	return nil
 }

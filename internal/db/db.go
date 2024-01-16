@@ -5,14 +5,13 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/joomcode/errorx"
 	_ "github.com/lib/pq"
 	"github.com/lockp111/go-easyzap"
 )
 
 type IDb interface {
+	Ping(ctx context.Context) error
 	Exec(ctx context.Context, query string, args ...any) (sql.Result, error)
-	Ping(ctx context.Context) *errorx.Error
 	Close()
 }
 
@@ -20,15 +19,15 @@ type Db struct {
 	conn *sql.DB
 }
 
-func NewDb(ctx context.Context, cfg config.Config) (*Db, error) {
+func NewDb(cfg config.Config) *Db {
 	db, err := sql.Open(cfg.DatabaseConfig.PostgresDriver, cfg.DatabaseConfig.DatabaseConnStr)
 	if err != nil {
-		return nil, err
+		easyzap.Panicf("configuration error: %v", err)
 	}
 
 	return &Db{
 		conn: db,
-	}, nil
+	}
 }
 
 func (db *Db) Ping(ctx context.Context) error {

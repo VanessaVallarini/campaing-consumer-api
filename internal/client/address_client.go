@@ -1,3 +1,3 @@
 package client
 
-//"github.com/VanessaVallarini/address-api/pkg/api/proto/v1"
+//import "github.com/VanessaVallarini/address-api"
