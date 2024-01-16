@@ -29,8 +29,8 @@ func EventTrackingListener(ctx context.Context, awsClient client.IAwsClient, ser
 			waitGroup.Add(len(sqsMessage.Messages))
 			for index := range sqsMessage.Messages {
 				func(message types.Message) {
-					var eventMessage *model.Campaing
-					easyzap.Debug(ctx, "[Event tracking] Processing message.")
+					var eventMessage *model.Event
+					easyzap.Debug(ctx, "[Event tracking] Processing message id %v:", message.MessageId)
 					defer waitGroup.Done()
 					if err := json.Unmarshal([]byte(*message.Body), &eventMessage); err != nil {
 						easyzap.Error(ctx, err, "[Event tracking] Error to parse message from queue. [Message Body: %v]", *message.Body)

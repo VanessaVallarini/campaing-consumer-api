@@ -9,7 +9,6 @@ import (
 	"campaing-comsumer-service/internal/service"
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
@@ -29,18 +28,13 @@ func main() {
 	}
 	campaingService := service.NewCampaignService(db)
 
-	c := model.Campaing{}
-	c.Id = uuid.New()
+	c := model.Event{}
 	c.UserId = uuid.New()
 	c.SlugId = uuid.New()
 	c.MerchantId = uuid.New()
-	c.CreatedAt = time.Now()
-	c.UpdatedAt = time.Now()
-	c.Active = true
 	c.Lat = 45.6085
 	c.Long = -73.5493
-	c.Clicks = 0
-	c.Impressions = 0
+	c.Action = model.EVENT_ACTION_CREATE
 
 	queue := config.GetConfig().AwsConfig.QueueCampaing
 	nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}

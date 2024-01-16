@@ -1,0 +1,9 @@
+package model
+
+const (
+	EVENT_ACTION_CREATE            = "C"
+	EVENT_ACTION_UPDATE_CLICK      = "UC"
+	EVENT_ACTION_UPDATE_IMPRESSION = "UI"
+	EVENT_ACTION_ACTIVATE          = "A"
+	EVENT_ACTION_INACTIVATE        = "I"
+)

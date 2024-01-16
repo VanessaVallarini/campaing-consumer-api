@@ -7,7 +7,7 @@ import (
 )
 
 type ICampaignService interface {
-	CreateHandler(ctx context.Context, campaing *model.Campaing) error
+	CreateHandler(ctx context.Context, campaing *model.Event) error
 }
 
 type CampaignService struct {
@@ -20,6 +20,6 @@ func NewCampaignService(db db.IDb) *CampaignService {
 	}
 }
 
-func (c CampaignService) CreateHandler(ctx context.Context, campaing *model.Campaing) error {
+func (c CampaignService) CreateHandler(ctx context.Context, campaing *model.Event) error {
 	return nil
 }
