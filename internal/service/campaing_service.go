@@ -4,6 +4,7 @@ import (
 	"campaing-comsumer-service/internal/db"
 	"campaing-comsumer-service/internal/model"
 	"context"
+	"fmt"
 	//"github.com/Vanessa.Vallarini/address-api/pkg/api/proto/v1"
 )
 
@@ -22,5 +23,6 @@ func NewCampaignService(db db.IDb) *CampaignService {
 }
 
 func (c CampaignService) CreateHandler(ctx context.Context, campaing *model.Event) error {
+	fmt.Println(campaing)
 	return nil
 }
