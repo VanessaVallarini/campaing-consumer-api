@@ -3,9 +3,9 @@ package main
 import (
 	"campaing-comsumer-service/internal/client"
 	"campaing-comsumer-service/internal/config"
-	"campaing-comsumer-service/internal/db"
 	"campaing-comsumer-service/internal/listener"
 	"campaing-comsumer-service/internal/model"
+	"campaing-comsumer-service/internal/repository"
 	"campaing-comsumer-service/internal/service"
 	"context"
 	"fmt"
@@ -19,7 +19,7 @@ func main() {
 	cfg := config.GetConfig()
 
 	//clients
-	db := db.NewDbClient(cfg)
+	db := repository.NewPostgresClient(cfg)
 	defer db.Close()
 
 	awsClient := client.NewAwsClient(cfg.AwsConfig.Url, cfg.AwsConfig.Region)
@@ -27,22 +27,34 @@ func main() {
 		easyzap.Panic("failed creating aws client")
 	}
 
+	campaingRepository := repository.NewCampaingRepository(db)
+
 	//services
-	campaingService := service.NewCampaignService(db)
+	campaingService := service.NewCampaignService(campaingRepository)
 
 	//testes
-	c := model.Event{}
-	c.UserId = uuid.New()
-	c.SlugId = uuid.New()
-	c.MerchantId = uuid.New()
-	c.Lat = 45.6085
-	c.Long = -73.5493
-	c.Action = model.EVENT_ACTION_CREATE
+	cc := model.Event{}
+	cc.Lat = 45.6085
+	cc.Long = -73.5493
+	cc.Action = model.EVENT_ACTION_CREATE
 	queue := config.GetConfig().AwsConfig.QueueCampaing
-	nums := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	for range nums {
-		awsClient.SendMessage(ctx, &c, &queue)
-	}
+	awsClient.SendMessage(ctx, &cc, &queue)
+
+	cu := model.Event{}
+	cu.Id = uuid.MustParse("a35e4414-4b95-4ea3-ac51-b0313d756294")
+	cu.UserId = uuid.New()
+	cu.SlugId = uuid.New()
+	cu.Active = true
+	cu.Lat = 45.6085
+	cu.Long = -73.5493
+	cu.Clicks = 2
+	cu.Impressions = 4
+	cu.Action = model.EVENT_ACTION_UPDATE
+	awsClient.SendMessage(ctx, &cu, &queue)
+
+	cd := model.Event{}
+	cd.Id = uuid.MustParse("a35e4414-4b95-4ea3-ac51-b0313d756294")
+	awsClient.SendMessage(ctx, &cd, &queue)
 
 	//listener
 	//go

@@ -2,7 +2,6 @@ package listener
 
 import (
 	"campaing-comsumer-service/internal/client"
-	"campaing-comsumer-service/internal/service"
 	"context"
 	"encoding/json"
 	"sync"
@@ -14,7 +13,11 @@ import (
 	"github.com/lockp111/go-easyzap"
 )
 
-func EventTrackingListener(ctx context.Context, awsClient client.IAwsClient, service service.ICampaignService, queueUrl string) {
+type CampaingService interface {
+	CampaingHandler(ctx context.Context, campaing *model.Event) error
+}
+
+func EventTrackingListener(ctx context.Context, awsClient client.IAwsClient, service CampaingService, queueUrl string) {
 	waitGroup := &sync.WaitGroup{}
 	for {
 		sqsMessage, queueErr := awsClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
@@ -37,7 +40,7 @@ func EventTrackingListener(ctx context.Context, awsClient client.IAwsClient, ser
 						return
 					}
 					if eventMessage != nil {
-						if err := service.CreateHandler(ctx, eventMessage); err != nil {
+						if err := service.CampaingHandler(ctx, eventMessage); err != nil {
 							easyzap.Error(ctx, err, "[Event tracking] Failed to process event tracking message. [Error: %v]", err)
 							return
 						}

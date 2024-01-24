@@ -1,39 +1,180 @@
 package repository
 
 import (
-	"campaing-comsumer-service/internal/db"
 	"campaing-comsumer-service/internal/model"
 	"context"
-	"fmt"
+	"database/sql"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
-	"go.uber.org/zap"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
-const TABLE_NAME = "campaing"
-
-type ICampaingRepository interface {
-	Create(ctx context.Context, params model.Campaing) error
+type Campaing struct {
+	conn *sql.DB
 }
 
-type CampaingRepository struct {
-	conn db.IDb
-}
-
-func NewFormRepository(conn db.IDb) *CampaingRepository {
-	return &CampaingRepository{
+func NewCampaingRepository(conn *sql.DB) *Campaing {
+	return &Campaing{
 		conn: conn,
 	}
 }
 
-func (repo *CampaingRepository) Create(ctx context.Context, params model.Campaing) error {
-	result, err := repo.conn.Exec(ctx, "insert into campaing(id,user_id,slug_id,merchant_id,active,lat,long) VALUES($1,$2,$3,$4,$5,$6,$7)",
-		params.Id, params.UserId, params.SlugId, params.MerchantId, params.CreatedAt, params.UpdatedAt, params.Active, params.Lat, params.Long)
+func (c *Campaing) Create(params model.Campaing) error {
+	span, ctx := tracer.StartSpanFromContext(context.Background(), "campaing_repository.create",
+		tracer.ResourceName("postgres"),
+		tracer.SpanType("db"),
+	)
+	defer span.Finish()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
-		id, err := result.LastInsertId()
-		easyzap.Error(ctx, err, "error on create query for campaing id",
-			zap.String("campaingId", fmt.Sprintf("%v", id)))
+		easyzap.Warn("create campaing %v cancel by context. msg: %v", params, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
 	}
 
+	_, err = tx.ExecContext(ctx, "insert into campaing(id,user_id,slug_id,merchant_id,created_at,updated_at,active,lat,long,clicks,impressions) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+		params.Id, params.UserId, params.SlugId, params.MerchantId, params.CreatedAt, params.UpdatedAt, params.Active, params.Lat, params.Long, params.Clicks, params.Impressions)
+	if err != nil {
+		tx.Rollback()
+		easyzap.Warn("create campaing %v query exec fail rollbak. msg: %v", params, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		easyzap.Warn("create campaing %v fail. msg: %v", params, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+	return nil
+}
+
+//vou usar no producer
+/* func (c *Campaing) Select(param uuid.UUID) (model.Campaing, error) {
+	span, ctx := tracer.StartSpanFromContext(context.Background(), "campaing_repository.select",
+		tracer.ResourceName("postgres"),
+		tracer.SpanType("db"),
+	)
+	defer span.Finish()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	tx, err := c.conn.BeginTx(ctx, nil)
+	if err != nil {
+		easyzap.Warn("select campaing id %v cancel by context. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, nil
+	}
+
+	var campaing model.Campaing
+	row, err := tx.QueryContext(ctx, "select * from campaing where id $1", param)
+	if err != nil {
+		easyzap.Warn("select campaing id %v query exec fail. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, nil
+	}
+	defer row.Close()
+
+	err = row.Scan(&campaing)
+	if err != nil {
+		tx.Rollback()
+		easyzap.Warn("scan campaing id %v fail. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, nil
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		easyzap.Warn("select campaing id %v fail. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, nil
+	}
+	return campaing, nil
+} */
+
+func (c *Campaing) Update(params model.Campaing) error {
+	span, ctx := tracer.StartSpanFromContext(context.Background(), "campaing_repository.update",
+		tracer.ResourceName("postgres"),
+		tracer.SpanType("db"),
+	)
+	defer span.Finish()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	tx, err := c.conn.BeginTx(ctx, nil)
+	if err != nil {
+		easyzap.Warn("update campaing %v cancel by context. msg: %v", params, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+	result, err := tx.ExecContext(ctx, "update campaing set user_id=$2,slug_id=$3,updated_at=$4,active=$5,lat=6,long=$7,clicks=$8,impressions=$9 where id $1",
+		params.Id, params.UserId, params.SlugId, params.UpdatedAt, params.Active, params.Lat, params.Long, params.Clicks, params.Impressions)
+	if err != nil {
+		tx.Rollback()
+		easyzap.Warn("update campaing %v query exec fail. msg: %v", params, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		easyzap.Warn("update campaing %v fail. msg: %v", params, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+	result.LastInsertId()
+	return nil
+}
+
+func (c *Campaing) Delete(param uuid.UUID) error {
+	span, ctx := tracer.StartSpanFromContext(context.Background(), "campaing_repository.delete",
+		tracer.ResourceName("postgres"),
+		tracer.SpanType("db"),
+	)
+	defer span.Finish()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	tx, err := c.conn.BeginTx(ctx, nil)
+	if err != nil {
+		easyzap.Warn("delete campaing id %v cancel by context. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+	_, err = tx.ExecContext(ctx, "delete from campaing where id $1 = %v", param)
+	if err != nil {
+		tx.Rollback()
+		easyzap.Warn("delete campaing id %v fail. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		easyzap.Warn("delete campaing id %v fail. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return err
+	}
 	return nil
 }
