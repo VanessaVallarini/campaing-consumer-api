@@ -41,7 +41,7 @@ func main() {
 	awsClient.SendMessage(ctx, &cc, &queue)
 
 	cu := model.Event{}
-	cu.Id = uuid.MustParse("a35e4414-4b95-4ea3-ac51-b0313d756294")
+	cu.Id = uuid.MustParse("79c1066f-b7e2-48ee-a157-48ec7224e7d1")
 	cu.UserId = uuid.New()
 	cu.SlugId = uuid.New()
 	cu.Active = true
@@ -53,7 +53,8 @@ func main() {
 	awsClient.SendMessage(ctx, &cu, &queue)
 
 	cd := model.Event{}
-	cd.Id = uuid.MustParse("a35e4414-4b95-4ea3-ac51-b0313d756294")
+	cd.Id = uuid.MustParse("79c1066f-b7e2-48ee-a157-48ec7224e7d1")
+	cd.Action = model.EVENT_ACTION_DELETE
 	awsClient.SendMessage(ctx, &cd, &queue)
 
 	//listener

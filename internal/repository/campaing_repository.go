@@ -124,7 +124,7 @@ func (c *Campaing) Update(params model.Campaing) error {
 
 		return err
 	}
-	result, err := tx.ExecContext(ctx, "update campaing set user_id=$2,slug_id=$3,updated_at=$4,active=$5,lat=6,long=$7,clicks=$8,impressions=$9 where id $1",
+	result, err := tx.ExecContext(ctx, "update campaing set user_id=$2,slug_id=$3,updated_at=$4,active=$5,lat=6,long=$7,clicks=$8,impressions=$9 where id = $1",
 		params.Id, params.UserId, params.SlugId, params.UpdatedAt, params.Active, params.Lat, params.Long, params.Clicks, params.Impressions)
 	if err != nil {
 		tx.Rollback()
@@ -161,7 +161,7 @@ func (c *Campaing) Delete(param uuid.UUID) error {
 
 		return err
 	}
-	_, err = tx.ExecContext(ctx, "delete from campaing where id $1 = %v", param)
+	_, err = tx.ExecContext(ctx, "delete from campaing where id = $1", param)
 	if err != nil {
 		tx.Rollback()
 		easyzap.Warn("delete campaing id %v fail. msg: %v", param, err)

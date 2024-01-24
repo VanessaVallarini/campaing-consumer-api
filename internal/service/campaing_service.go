@@ -42,7 +42,7 @@ func (c Campaing) CampaingHandler(ctx context.Context, campaing *model.Event) er
 		})
 	}
 	if campaing.Action == model.EVENT_ACTION_UPDATE {
-		return c.repository.Create(model.Campaing{
+		return c.repository.Update(model.Campaing{
 			Id:          campaing.Id,
 			UserId:      campaing.UserId,
 			SlugId:      campaing.SlugId,
@@ -55,5 +55,8 @@ func (c Campaing) CampaingHandler(ctx context.Context, campaing *model.Event) er
 		})
 	}
 
-	return c.repository.Delete(campaing.Id)
+	if campaing.Action == model.EVENT_ACTION_DELETE {
+		return c.repository.Delete(campaing.Id)
+	}
+	return nil
 }
