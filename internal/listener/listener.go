@@ -1,7 +1,6 @@
 package listener
 
 import (
-	"campaing-comsumer-service/internal/client"
 	"context"
 	"encoding/json"
 	"sync"
@@ -13,11 +12,17 @@ import (
 	"github.com/lockp111/go-easyzap"
 )
 
+type AwsClient interface {
+	SendMessage(ctx context.Context, data interface{}, queueUrl *string) error
+	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error)
+	DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error)
+}
+
 type CampaingService interface {
 	CampaingHandler(ctx context.Context, campaing *model.Event) error
 }
 
-func EventTrackingListener(ctx context.Context, awsClient client.IAwsClient, service CampaingService, queueUrl string) {
+func EventTrackingListener(ctx context.Context, awsClient AwsClient, service CampaingService, queueUrl string) {
 	waitGroup := &sync.WaitGroup{}
 	for {
 		sqsMessage, queueErr := awsClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{

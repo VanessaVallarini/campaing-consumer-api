@@ -10,17 +10,11 @@ import (
 	"github.com/lockp111/go-easyzap"
 )
 
-type IAwsClient interface {
-	SendMessage(ctx context.Context, data interface{}, queueUrl *string) error
-	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error)
-	DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error)
-}
-
-type AwsClient struct {
+type Aws struct {
 	client *sqs.Client
 }
 
-func NewAwsClient(awsURL, region string) *AwsClient {
+func NewAwsClient(awsURL, region string) *Aws {
 	// customResolver is required here since we use localstack and need to point the aws url to localhost.
 	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
@@ -37,12 +31,12 @@ func NewAwsClient(awsURL, region string) *AwsClient {
 		easyzap.Panicf("configuration error: %v", err)
 	}
 
-	return &AwsClient{
+	return &Aws{
 		client: sqs.NewFromConfig(cfg),
 	}
 }
 
-func (a *AwsClient) SendMessage(ctx context.Context, data interface{}, queue *string) error {
+func (a *Aws) SendMessage(ctx context.Context, data interface{}, queue *string) error {
 	stringData, er := util.ParseToString(data)
 	if er == nil {
 		_, err := a.client.SendMessage(ctx, &sqs.SendMessageInput{
@@ -58,10 +52,10 @@ func (a *AwsClient) SendMessage(ctx context.Context, data interface{}, queue *st
 	return nil
 }
 
-func (a *AwsClient) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
+func (a *Aws) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
 	return a.client.ReceiveMessage(ctx, params)
 }
 
-func (a *AwsClient) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+func (a *Aws) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
 	return a.client.DeleteMessage(ctx, params)
 }
