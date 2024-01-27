@@ -1,0 +1,5 @@
+
+database:
+  user: postgres
+  name: user-name
+  connMax: 1

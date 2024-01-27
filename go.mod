@@ -58,7 +58,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/google/uuid v1.5.0
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
-	github.com/integralist/go-findroot v0.0.0-20160518114804-ac90681525dc
+	github.com/joomcode/errorx v1.1.1
 	github.com/lib/pq v1.10.9
 	github.com/lockp111/go-easyzap v1.1.0
 	github.com/magiconair/properties v1.8.7 // indirect

@@ -9,6 +9,7 @@ import (
 	"campaing-comsumer-service/internal/service"
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
@@ -16,13 +17,16 @@ import (
 
 func main() {
 	ctx := context.Background()
+	config.Init()
 	cfg := config.GetConfig()
-
+	awsCfg := config.GetAwsConfig()
+	dbCfg := config.GetDatabaseConfig()
+	fmt.Printf("env %v", os.Getenv("environment"))
 	//clients
-	db := repository.NewPostgresClient(cfg)
+	db := repository.NewPostgresClient(dbCfg)
 	defer db.Close()
 
-	awsClient := client.NewAwsClient(cfg.AwsConfig.Url, cfg.AwsConfig.Region)
+	awsClient := client.NewAwsClient(awsCfg.Url, awsCfg.Region)
 	if awsClient == nil {
 		easyzap.Panic("failed creating aws client")
 	}
@@ -37,7 +41,7 @@ func main() {
 	cc.Lat = 45.6085
 	cc.Long = -73.5493
 	cc.Action = model.EVENT_ACTION_CREATE
-	queue := config.GetConfig().AwsConfig.QueueCampaing
+	queue := awsCfg.QueueCampaing
 	awsClient.SendMessage(ctx, &cc, &queue)
 
 	cu := model.Event{}

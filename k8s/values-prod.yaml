@@ -1,0 +1,25 @@
+appConfigFile:
+  enabled: true
+  data:
+    - volumeName: service-config
+      mountPath: /app/app/internal/config
+      fileName: configuration.yml
+      fileContent: |
+        app:
+          name: campaing-consumer-api
+        server:
+          port: 8080
+        health:
+          port: 0.0.0.0:8081
+        timeLocation: America/Sao_Paulo
+        database:
+          driver: postgres
+          host: pg-campaing-consumer-api.production.com
+          port: 5432
+          user: ads-campaing-app
+          name: ads-campaing-db
+          connMax: 20
+        aws:
+          region: us-east-1
+          sqs:
+            queue: https://sqs.us-east-1.amazonaws.com/queue_campaing

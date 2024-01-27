@@ -9,8 +9,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func NewPostgresClient(cfg config.Config) *sql.DB {
-	conn, err := sql.Open(cfg.DatabaseConfig.PostgresDriver, cfg.DatabaseConfig.DatabaseConnStr)
+func NewPostgresClient(cfg config.DatabaseConfig) *sql.DB {
+	conn, err := sql.Open(cfg.PostgresDriver, cfg.DatabaseConnStr)
 	if err != nil {
 		easyzap.Fatal("new db client error: %v", err)
 	}
