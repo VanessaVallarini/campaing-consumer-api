@@ -39,3 +39,8 @@ local-toggles.properties
 /local
 
 coverage.out
+
+
+local-env/secret*.yml
+internal/config/*.yml
+internal/config/*.yaml
