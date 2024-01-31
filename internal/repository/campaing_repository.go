@@ -21,6 +21,53 @@ func NewCampaingRepository(conn *sql.DB) *Campaing {
 	}
 }
 
+func (c *Campaing) GetByMerchantId(param uuid.UUID) (model.Campaing, error) {
+	span, ctx := tracer.StartSpanFromContext(context.Background(), "campaing_repository.get-by-merchant-id",
+		tracer.ResourceName("postgres"),
+		tracer.SpanType("db"),
+	)
+	defer span.Finish()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	tx, err := c.conn.BeginTx(ctx, nil)
+	if err != nil {
+		easyzap.Warn("select campaing by merchant_id %v cancel by context. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, err
+	}
+
+	var campaing model.Campaing
+	row := tx.QueryRowContext(ctx, "select * from campaing where merchant_id = $1 and active = true;", param)
+
+	err = row.Scan(&campaing.Id, &campaing.UserId, &campaing.SlugId, &campaing.MerchantId, &campaing.CreatedAt, &campaing.UpdatedAt, &campaing.Active, &campaing.Lat, &campaing.Long, &campaing.Clicks, &campaing.Impressions)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			easyzap.Warn("no lines found for merchant_id: %v", param, err)
+			tx.Rollback()
+
+			return model.Campaing{}, nil
+		}
+		easyzap.Errorf("scan campaing %v fail. msg: %v", param, err)
+		tx.Rollback()
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		easyzap.Warn("select campaing by merchant_id %v fail. msg: %v", param, err)
+		span.Finish(tracer.WithError(err))
+
+		return model.Campaing{}, err
+	}
+
+	return campaing, nil
+}
+
 func (c *Campaing) Create(params model.Campaing) error {
 	span, ctx := tracer.StartSpanFromContext(context.Background(), "campaing_repository.create",
 		tracer.ResourceName("postgres"),
@@ -56,6 +103,7 @@ func (c *Campaing) Create(params model.Campaing) error {
 
 		return err
 	}
+
 	return nil
 }
 

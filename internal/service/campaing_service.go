@@ -3,6 +3,7 @@ package service
 import (
 	"campaing-comsumer-service/internal/model"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,25 +14,77 @@ type CampaingRepository interface {
 	Create(params model.Campaing) error
 	Update(params model.Campaing) error
 	Delete(param uuid.UUID) error
+	GetByMerchantId(param uuid.UUID) (model.Campaing, error)
+}
+
+type UserRepository interface {
+	GetById(param uuid.UUID) (model.User, error)
+}
+
+type SlugRepository interface {
+	GetById(param uuid.UUID) (model.Slug, error)
+}
+
+type MerchantRepository interface {
+	GetById(param uuid.UUID) (model.Merchant, error)
 }
 
 type Campaing struct {
-	repository CampaingRepository
+	campaingRepository CampaingRepository
+	userRepository     UserRepository
+	slugRepository     SlugRepository
+	merchantRepository MerchantRepository
 }
 
-func NewCampaignService(repository CampaingRepository) *Campaing {
+func NewCampaignService(campaingRepository CampaingRepository, userRepository UserRepository, slugRepository SlugRepository, merchantRepository MerchantRepository) *Campaing {
 	return &Campaing{
-		repository: repository,
+		campaingRepository: campaingRepository,
+		userRepository:     userRepository,
+		slugRepository:     slugRepository,
+		merchantRepository: merchantRepository,
 	}
 }
 
-func (c Campaing) CampaingHandler(ctx context.Context, campaing *model.Event) error {
+func (c Campaing) Handler(ctx context.Context, campaing *model.Event) error {
 	if campaing.Action == model.EVENT_ACTION_CREATE {
-		return c.repository.Create(model.Campaing{
+		return c.create(ctx, campaing)
+	}
+	if campaing.Action == model.EVENT_ACTION_UPDATE {
+		return c.update(ctx, campaing)
+	}
+	if campaing.Action == model.EVENT_ACTION_DELETE {
+		return c.delete(ctx, campaing.Id)
+	}
+	return fmt.Errorf(fmt.Sprintf("invalid action:%v", campaing.Action))
+}
+
+func (c Campaing) create(ctx context.Context, campaing *model.Event) error {
+	user, err := c.userRepository.GetById(campaing.UserId)
+	if err != nil {
+		return err
+	}
+
+	slug, err := c.slugRepository.GetById(campaing.SlugId)
+	if err != nil {
+		return err
+	}
+
+	merchant, err := c.merchantRepository.GetById(campaing.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	hasCampaing, err := c.campaingRepository.GetByMerchantId(campaing.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	if user.Id != uuid.Nil && slug.Id != uuid.Nil && merchant.Id != uuid.Nil && !hasCampaing.Active {
+		return c.campaingRepository.Create(model.Campaing{
 			Id:          uuid.New(),
-			UserId:      uuid.New(),
-			SlugId:      uuid.New(),
-			MerchantId:  uuid.New(),
+			UserId:      user.Id,
+			SlugId:      slug.Id,
+			MerchantId:  merchant.Id,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 			Active:      true,
@@ -41,8 +94,33 @@ func (c Campaing) CampaingHandler(ctx context.Context, campaing *model.Event) er
 			Impressions: 0,
 		})
 	}
-	if campaing.Action == model.EVENT_ACTION_UPDATE {
-		return c.repository.Update(model.Campaing{
+
+	return fmt.Errorf(fmt.Sprintf("campaign create failure. user_id:%v slug_id:%v merchant_id:%v: has_campaing:%v", user.Id, slug.Id, merchant.Id, hasCampaing.Id))
+}
+
+func (c Campaing) update(ctx context.Context, campaing *model.Event) error {
+	slug, err := c.slugRepository.GetById(campaing.SlugId)
+	if err != nil {
+		return err
+	}
+
+	user, err := c.userRepository.GetById(campaing.UserId)
+	if err != nil {
+		return err
+	}
+
+	hasCampaing, err := c.campaingRepository.GetByMerchantId(campaing.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	merchant, err := c.merchantRepository.GetById(campaing.MerchantId)
+	if err != nil {
+		return err
+	}
+
+	if user.Id != uuid.Nil && slug.Id != uuid.Nil && merchant.Id != uuid.Nil && hasCampaing.Active {
+		return c.campaingRepository.Update(model.Campaing{
 			Id:          campaing.Id,
 			UserId:      campaing.UserId,
 			SlugId:      campaing.SlugId,
@@ -55,8 +133,9 @@ func (c Campaing) CampaingHandler(ctx context.Context, campaing *model.Event) er
 		})
 	}
 
-	if campaing.Action == model.EVENT_ACTION_DELETE {
-		return c.repository.Delete(campaing.Id)
-	}
-	return nil
+	return fmt.Errorf(fmt.Sprintf("campaign update failure. user_id:%v slug_id:%v merchant_id:%v: has_campaing:%v", user.Id, slug.Id, merchant.Id, hasCampaing.Id))
+}
+
+func (c Campaing) delete(ctx context.Context, id uuid.UUID) error {
+	return c.campaingRepository.Delete(id)
 }

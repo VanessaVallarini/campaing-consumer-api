@@ -7,15 +7,15 @@ import (
 )
 
 type Campaing struct {
-	Id          uuid.UUID
-	UserId      uuid.UUID
-	SlugId      uuid.UUID
-	MerchantId  uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Active      bool
-	Lat         float64
-	Long        float64
-	Clicks      int
-	Impressions int
+	Id          uuid.UUID `json:"id"`
+	UserId      uuid.UUID `json:"user_id"`
+	SlugId      uuid.UUID `json:"slug_id"`
+	MerchantId  uuid.UUID `json:"merchant_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Active      bool      `json:"active"`
+	Lat         float64   `json:"lat"`
+	Long        float64   `json:"long"`
+	Clicks      int       `json:"clicks"`
+	Impressions int       `json:"impressions"`
 }

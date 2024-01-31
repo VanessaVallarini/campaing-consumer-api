@@ -19,7 +19,7 @@ type AwsClient interface {
 }
 
 type CampaingService interface {
-	CampaingHandler(ctx context.Context, campaing *model.Event) error
+	Handler(ctx context.Context, campaing *model.Event) error
 }
 
 func EventTrackingListener(ctx context.Context, awsClient AwsClient, service CampaingService, queueUrl string) {
@@ -45,7 +45,7 @@ func EventTrackingListener(ctx context.Context, awsClient AwsClient, service Cam
 						return
 					}
 					if eventMessage != nil {
-						if err := service.CampaingHandler(ctx, eventMessage); err != nil {
+						if err := service.Handler(ctx, eventMessage); err != nil {
 							easyzap.Error(ctx, err, "[Event tracking] Failed to process event tracking message. [Error: %v]", err)
 							return
 						}

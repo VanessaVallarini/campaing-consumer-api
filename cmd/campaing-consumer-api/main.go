@@ -5,6 +5,7 @@ import (
 	"campaing-comsumer-service/internal/client"
 	"campaing-comsumer-service/internal/config"
 	"campaing-comsumer-service/internal/listener"
+	"campaing-comsumer-service/internal/model"
 	"campaing-comsumer-service/internal/repository"
 	"campaing-comsumer-service/internal/service"
 	"context"
@@ -12,6 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/lockp111/go-easyzap"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -51,10 +53,29 @@ func main() {
 		easyzap.Panic("failed creating aws client")
 	}
 
+	//repositories
 	campaingRepository := repository.NewCampaingRepository(db)
+	userRepository := repository.NewUserRepository(db)
+	slugRepository := repository.NewSlugRepository(db)
+	merchantRepository := repository.NewMerchantRepository(db)
 
 	//services
-	campaingService := service.NewCampaignService(campaingRepository)
+	campaingService := service.NewCampaignService(campaingRepository, userRepository, slugRepository, merchantRepository)
+
+	//testes
+	queue := awsCfg.QueueCampaing
+	c := model.Event{}
+	c.UserId = uuid.MustParse("c3eeb9b0-051c-4803-b0a4-f6060bcb40d9")
+	c.SlugId = uuid.MustParse("f43e580b-ffb2-490d-aea1-b2f0435d624b")
+	c.MerchantId = uuid.MustParse("2ed8b772-1714-46de-98ab-c2653bb03d78")
+	c.Lat = 45.6085
+	c.Long = -73.5493
+	c.Action = model.EVENT_ACTION_CREATE
+	awsClient.SendMessage(ctx, &c, &queue)
+
+	//listener
+	//go
+	listener.EventTrackingListener(ctx, awsClient, campaingService, awsCfg.QueueCampaing)
 
 	meta := echo.New()
 	meta.HideBanner = true
@@ -87,6 +108,4 @@ func main() {
 		easyzap.Info(ctx, "Received SIGTERM, stopping...")
 	}
 
-	//listener
-	go listener.EventTrackingListener(ctx, awsClient, campaingService, awsCfg.QueueCampaing)
 }
