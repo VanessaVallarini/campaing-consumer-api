@@ -44,3 +44,5 @@ coverage.out
 local-env/secret*.yml
 internal/config/*.yml
 internal/config/*.yaml
+
+build/package/docker/localstack/.terraform
