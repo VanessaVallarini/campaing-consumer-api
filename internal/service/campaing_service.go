@@ -110,12 +110,17 @@ func (c Campaing) update(ctx context.Context, campaing *model.Event) error {
 		return err
 	}
 
+	merchant, err := c.merchantRepository.GetById(campaing.MerchantId)
+	if err != nil {
+		return err
+	}
+
 	hasCampaing, err := c.campaingRepository.GetById(campaing.Id)
 	if err != nil {
 		return err
 	}
 
-	if user.Id != uuid.Nil && slug.Id != uuid.Nil && len(hasCampaing.Id) != 0 {
+	if user.Id != uuid.Nil && slug.Id != uuid.Nil && merchant.Id != uuid.Nil && len(hasCampaing.Id) != 0 {
 		return c.campaingRepository.Update(model.Campaing{
 			Id:          campaing.Id,
 			UserId:      campaing.UserId,
@@ -129,7 +134,7 @@ func (c Campaing) update(ctx context.Context, campaing *model.Event) error {
 		})
 	}
 
-	return fmt.Errorf(fmt.Sprintf("campaign update failure. user_id:%v slug_id:%v has_campaing:%v", user.Id, slug.Id, hasCampaing.Id))
+	return fmt.Errorf(fmt.Sprintf("campaign update failure. user_id:%v slug_id:%v merchant_id:%v has_campaing:%v", user.Id, slug.Id, merchant.Id, hasCampaing.Id))
 }
 
 func (c Campaing) delete(ctx context.Context, id uuid.UUID) error {
