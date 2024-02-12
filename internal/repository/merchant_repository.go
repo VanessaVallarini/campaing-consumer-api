@@ -45,7 +45,7 @@ func (c *Merchant) GetById(param uuid.UUID) (model.Merchant, error) {
 	err = row.Scan(&merchant.Id, &merchant.UserId, &merchant.SlugId, &merchant.CreatedAt, &merchant.UpdatedAt, &merchant.Name, &merchant.Active, &merchant.Lat, &merchant.Long)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			easyzap.Warn("no lines found for merchant_id: %v", param, err)
+			easyzap.Warn("no lines found merchant for merchant_id: %v", param, err)
 			tx.Rollback()
 
 			return model.Merchant{}, nil

@@ -45,7 +45,7 @@ func (c *Campaing) GetByMerchantId(param uuid.UUID) (model.Campaing, error) {
 	err = row.Scan(&campaing.Id, &campaing.UserId, &campaing.SlugId, &campaing.MerchantId, &campaing.CreatedAt, &campaing.UpdatedAt, &campaing.Active, &campaing.Lat, &campaing.Long, &campaing.Clicks, &campaing.Impressions)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			easyzap.Warn("no lines found for merchant_id: %v", param, err)
+			easyzap.Warn("no lines found campaing for merchant_id: %v", param, err)
 			tx.Rollback()
 
 			return model.Campaing{}, nil
