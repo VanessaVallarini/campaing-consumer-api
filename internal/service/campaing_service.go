@@ -11,23 +11,23 @@ import (
 )
 
 type CampaingRepository interface {
-	Create(params model.Campaing) error
-	Update(params model.Campaing) error
-	Delete(param uuid.UUID) error
-	GetByMerchantId(param uuid.UUID) (model.Campaing, error)
-	GetById(param uuid.UUID) (model.Campaing, error)
+	Create(ctx context.Context, params model.Campaing) error
+	Update(ctx context.Context, params model.Campaing) error
+	Delete(ctx context.Context, param uuid.UUID) error
+	GetByMerchantId(ctx context.Context, param uuid.UUID) (model.Campaing, error)
+	GetById(ctx context.Context, param uuid.UUID) (model.Campaing, error)
 }
 
 type UserRepository interface {
-	GetById(param uuid.UUID) (model.User, error)
+	GetById(ctx context.Context, param uuid.UUID) (model.User, error)
 }
 
 type SlugRepository interface {
-	GetById(param uuid.UUID) (model.Slug, error)
+	GetById(ctx context.Context, param uuid.UUID) (model.Slug, error)
 }
 
 type MerchantRepository interface {
-	GetById(param uuid.UUID) (model.Merchant, error)
+	GetById(ctx context.Context, param uuid.UUID) (model.Merchant, error)
 }
 
 type Campaing struct {
@@ -60,28 +60,28 @@ func (c Campaing) Handler(ctx context.Context, campaing *model.Event) error {
 }
 
 func (c Campaing) create(ctx context.Context, campaing *model.Event) error {
-	user, err := c.userRepository.GetById(campaing.UserId)
+	user, err := c.userRepository.GetById(ctx, campaing.UserId)
 	if err != nil {
 		return err
 	}
 
-	slug, err := c.slugRepository.GetById(campaing.SlugId)
+	slug, err := c.slugRepository.GetById(ctx, campaing.SlugId)
 	if err != nil {
 		return err
 	}
 
-	merchant, err := c.merchantRepository.GetById(campaing.MerchantId)
+	merchant, err := c.merchantRepository.GetById(ctx, campaing.MerchantId)
 	if err != nil {
 		return err
 	}
 
-	hasCampaing, err := c.campaingRepository.GetByMerchantId(campaing.MerchantId)
+	hasCampaing, err := c.campaingRepository.GetByMerchantId(ctx, campaing.MerchantId)
 	if err != nil {
 		return err
 	}
 
 	if user.Id != uuid.Nil && slug.Id != uuid.Nil && merchant.Id != uuid.Nil && !hasCampaing.Active {
-		return c.campaingRepository.Create(model.Campaing{
+		return c.campaingRepository.Create(ctx, model.Campaing{
 			Id:          uuid.New(),
 			UserId:      user.Id,
 			SlugId:      slug.Id,
@@ -100,28 +100,28 @@ func (c Campaing) create(ctx context.Context, campaing *model.Event) error {
 }
 
 func (c Campaing) update(ctx context.Context, campaing *model.Event) error {
-	user, err := c.userRepository.GetById(campaing.UserId)
+	user, err := c.userRepository.GetById(ctx, campaing.UserId)
 	if err != nil {
 		return err
 	}
 
-	slug, err := c.slugRepository.GetById(campaing.SlugId)
+	slug, err := c.slugRepository.GetById(ctx, campaing.SlugId)
 	if err != nil {
 		return err
 	}
 
-	merchant, err := c.merchantRepository.GetById(campaing.MerchantId)
+	merchant, err := c.merchantRepository.GetById(ctx, campaing.MerchantId)
 	if err != nil {
 		return err
 	}
 
-	hasCampaing, err := c.campaingRepository.GetById(campaing.Id)
+	hasCampaing, err := c.campaingRepository.GetById(ctx, campaing.Id)
 	if err != nil {
 		return err
 	}
 
 	if user.Id != uuid.Nil && slug.Id != uuid.Nil && merchant.Id != uuid.Nil && len(hasCampaing.Id) != 0 {
-		return c.campaingRepository.Update(model.Campaing{
+		return c.campaingRepository.Update(ctx, model.Campaing{
 			Id:          campaing.Id,
 			UserId:      campaing.UserId,
 			SlugId:      campaing.SlugId,
@@ -138,5 +138,5 @@ func (c Campaing) update(ctx context.Context, campaing *model.Event) error {
 }
 
 func (c Campaing) delete(ctx context.Context, id uuid.UUID) error {
-	return c.campaingRepository.Delete(id)
+	return c.campaingRepository.Delete(ctx, id)
 }

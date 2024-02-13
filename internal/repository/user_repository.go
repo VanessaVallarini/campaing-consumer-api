@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 type User struct {
@@ -21,20 +20,13 @@ func NewUserRepository(conn *sql.DB) *User {
 	}
 }
 
-func (c *User) GetById(param uuid.UUID) (model.User, error) {
-	span, ctx := tracer.StartSpanFromContext(context.Background(), "user_repository.get-by-id",
-		tracer.ResourceName("postgres"),
-		tracer.SpanType("db"),
-	)
-	defer span.Finish()
-
+func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
 		easyzap.Warn("select user %v cancel by context. msg: %v", param, err)
-		span.Finish(tracer.WithError(err))
 
 		return model.User{}, err
 	}
@@ -54,7 +46,6 @@ func (c *User) GetById(param uuid.UUID) (model.User, error) {
 		}
 		easyzap.Errorf("scan user %v fail. msg: %v", param, err)
 		tx.Rollback()
-		span.Finish(tracer.WithError(err))
 
 		return model.User{}, err
 	}
@@ -62,7 +53,6 @@ func (c *User) GetById(param uuid.UUID) (model.User, error) {
 	err = tx.Commit()
 	if err != nil {
 		easyzap.Warn("select user %v fail. msg: %v", param, err)
-		span.Finish(tracer.WithError(err))
 
 		return model.User{}, err
 	}

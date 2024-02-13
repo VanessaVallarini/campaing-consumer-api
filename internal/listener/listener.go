@@ -36,6 +36,7 @@ func EventTrackingListener(ctx context.Context, awsClient AwsClient, service Cam
 		if sqsMessage.Messages != nil && len(sqsMessage.Messages) > 0 {
 			waitGroup.Add(len(sqsMessage.Messages))
 			for index := range sqsMessage.Messages {
+				ctx := context.Background()
 				func(message types.Message) {
 					var eventMessage *model.Event
 					easyzap.Debug(ctx, "[Event tracking] Processing message id %v:", message.MessageId)

@@ -15,26 +15,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/lockp111/go-easyzap"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 )
 
 func main() {
 	ctx := context.Background()
-
-	tracer.Start(tracer.WithRuntimeMetrics())
-	err := profiler.Start(
-		profiler.WithProfileTypes(
-			profiler.CPUProfile,
-			profiler.HeapProfile,
-			profiler.GoroutineProfile,
-		),
-	)
-	if err != nil {
-		easyzap.Fatal(ctx, err, "failed to start profiler")
-	}
-	defer tracer.Stop()
-	defer profiler.Stop()
 
 	//configs
 	config.Init()

@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 type Merchant struct {
@@ -21,20 +20,13 @@ func NewMerchantRepository(conn *sql.DB) *Merchant {
 	}
 }
 
-func (c *Merchant) GetById(param uuid.UUID) (model.Merchant, error) {
-	span, ctx := tracer.StartSpanFromContext(context.Background(), "merchant_repository.get-by-id",
-		tracer.ResourceName("postgres"),
-		tracer.SpanType("db"),
-	)
-	defer span.Finish()
-
+func (c *Merchant) GetById(ctx context.Context, param uuid.UUID) (model.Merchant, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
 		easyzap.Warn("select merchant %v cancel by context. msg: %v", param, err)
-		span.Finish(tracer.WithError(err))
 
 		return model.Merchant{}, err
 	}
@@ -52,7 +44,6 @@ func (c *Merchant) GetById(param uuid.UUID) (model.Merchant, error) {
 		}
 		easyzap.Errorf("scan merchant %v fail. msg: %v", param, err)
 		tx.Rollback()
-		span.Finish(tracer.WithError(err))
 
 		return model.Merchant{}, err
 	}
@@ -60,7 +51,6 @@ func (c *Merchant) GetById(param uuid.UUID) (model.Merchant, error) {
 	err = tx.Commit()
 	if err != nil {
 		easyzap.Warn("select merchant id %v fail. msg: %v", param, err)
-		span.Finish(tracer.WithError(err))
 
 		return model.Merchant{}, err
 	}

@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 type Slug struct {
@@ -21,20 +20,13 @@ func NewSlugRepository(conn *sql.DB) *Slug {
 	}
 }
 
-func (c *Slug) GetById(param uuid.UUID) (model.Slug, error) {
-	span, ctx := tracer.StartSpanFromContext(context.Background(), "slug_repository.get-by-id",
-		tracer.ResourceName("postgres"),
-		tracer.SpanType("db"),
-	)
-	defer span.Finish()
-
+func (c *Slug) GetById(ctx context.Context, param uuid.UUID) (model.Slug, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
 		easyzap.Errorf("select slug %v cancel by context. msg: %v", param, err)
-		span.Finish(tracer.WithError(err))
 
 		return model.Slug{}, err
 	}
@@ -53,7 +45,6 @@ func (c *Slug) GetById(param uuid.UUID) (model.Slug, error) {
 		}
 		easyzap.Errorf("scan slug %v fail. msg: %v", param, err)
 		tx.Rollback()
-		span.Finish(tracer.WithError(err))
 
 		return model.Slug{}, err
 
@@ -62,7 +53,6 @@ func (c *Slug) GetById(param uuid.UUID) (model.Slug, error) {
 	err = tx.Commit()
 	if err != nil {
 		easyzap.Errorf("select slug %v fail. msg: %v", param, err)
-		span.Finish(tracer.WithError(err))
 
 		return model.Slug{}, err
 	}
