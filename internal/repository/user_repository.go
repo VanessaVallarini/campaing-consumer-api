@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"campaing-comsumer-service/internal/metrics"
 	"campaing-comsumer-service/internal/model"
 	"context"
 	"database/sql"
@@ -11,12 +12,14 @@ import (
 )
 
 type User struct {
-	conn *sql.DB
+	conn    *sql.DB
+	metrics *metrics.Metrics
 }
 
-func NewUserRepository(conn *sql.DB) *User {
+func NewUserRepository(metrics *metrics.Metrics, conn *sql.DB) *User {
 	return &User{
-		conn: conn,
+		conn:    conn,
+		metrics: metrics,
 	}
 }
 
@@ -27,6 +30,8 @@ func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error)
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
 		easyzap.Warn("select user %v cancel by context. msg: %v", param, err)
+		mv := []string{"GetById", "error", "starts_transaction"}
+		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
 
 		return model.User{}, err
 	}
@@ -40,12 +45,16 @@ func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error)
 		if err == sql.ErrNoRows {
 			easyzap.Warn("no lines found for user_id: %v", param, err)
 			tx.Rollback()
+			mv := []string{"GetById", "error", "no_rows"}
+			c.metrics.UserRepository.WithLabelValues(mv...).Inc()
 
 			return model.User{}, nil
 
 		}
 		easyzap.Errorf("scan user %v fail. msg: %v", param, err)
 		tx.Rollback()
+		mv := []string{"GetById", "error", "scan"}
+		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
 
 		return model.User{}, err
 	}
@@ -53,9 +62,14 @@ func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error)
 	err = tx.Commit()
 	if err != nil {
 		easyzap.Warn("select user %v fail. msg: %v", param, err)
+		mv := []string{"GetById", "error", "commit"}
+		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
 
 		return model.User{}, err
 	}
+
+	mv := []string{"GetById", "success", ""}
+	c.metrics.UserRepository.WithLabelValues(mv...).Inc()
 
 	return user, nil
 }

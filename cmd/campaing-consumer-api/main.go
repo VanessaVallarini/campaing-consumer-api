@@ -5,6 +5,7 @@ import (
 	"campaing-comsumer-service/internal/client"
 	"campaing-comsumer-service/internal/config"
 	"campaing-comsumer-service/internal/listener"
+	"campaing-comsumer-service/internal/metrics"
 	"campaing-comsumer-service/internal/repository"
 	"campaing-comsumer-service/internal/service"
 	"context"
@@ -26,26 +27,29 @@ func main() {
 	awsCfg := config.GetAwsConfig()
 	dbCfg := config.GetDatabaseConfig()
 
+	//metrics
+	metrics := metrics.NewMetrics()
+
 	//clients
 	db := repository.NewPostgresClient(dbCfg)
 	defer db.Close()
 
-	awsClient := client.NewAwsClient(awsCfg.Url, awsCfg.Region)
+	awsClient := client.NewAwsClient(metrics, awsCfg.Url, awsCfg.Region)
 	if awsClient == nil {
 		easyzap.Panic("failed creating aws client")
 	}
 
 	//repositories
-	campaingRepository := repository.NewCampaingRepository(db)
-	userRepository := repository.NewUserRepository(db)
-	slugRepository := repository.NewSlugRepository(db)
-	merchantRepository := repository.NewMerchantRepository(db)
+	campaingRepository := repository.NewCampaingRepository(metrics, db)
+	userRepository := repository.NewUserRepository(metrics, db)
+	slugRepository := repository.NewSlugRepository(metrics, db)
+	merchantRepository := repository.NewMerchantRepository(metrics, db)
 
 	//services
 	campaingService := service.NewCampaignService(campaingRepository, userRepository, slugRepository, merchantRepository)
 
 	//listener
-	go listener.EventTrackingListener(ctx, awsClient, campaingService, awsCfg.QueueCampaing)
+	go listener.EventTrackingListener(ctx, metrics, awsClient, campaingService, awsCfg.QueueCampaing)
 
 	meta := echo.New()
 	meta.HideBanner = true

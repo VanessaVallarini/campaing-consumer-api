@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"campaing-comsumer-service/internal/metrics"
 	"campaing-comsumer-service/internal/model"
 
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -13,7 +14,6 @@ import (
 )
 
 type AwsClient interface {
-	SendMessage(ctx context.Context, data interface{}, queueUrl *string) error
 	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error)
 	DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error)
 }
@@ -22,7 +22,7 @@ type CampaingService interface {
 	Handler(ctx context.Context, campaing *model.Event) error
 }
 
-func EventTrackingListener(ctx context.Context, awsClient AwsClient, service CampaingService, queueUrl string) {
+func EventTrackingListener(ctx context.Context, metrics *metrics.Metrics, awsClient AwsClient, service CampaingService, queueUrl string) {
 	waitGroup := &sync.WaitGroup{}
 	for {
 		sqsMessage, queueErr := awsClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
@@ -30,7 +30,8 @@ func EventTrackingListener(ctx context.Context, awsClient AwsClient, service Cam
 			MaxNumberOfMessages: 10,
 		})
 		if queueErr != nil {
-			easyzap.Error(ctx, queueErr, "Status on receiving message. Check the status of event tracking queue.")
+			easyzap.Error(ctx, queueErr, "status on receiving message - check the status of event tracking queue.")
+
 			continue
 		}
 		if sqsMessage.Messages != nil && len(sqsMessage.Messages) > 0 {
@@ -39,24 +40,29 @@ func EventTrackingListener(ctx context.Context, awsClient AwsClient, service Cam
 				ctx := context.Background()
 				func(message types.Message) {
 					var eventMessage *model.Event
-					easyzap.Debug(ctx, "[Event tracking] Processing message id %v:", message.MessageId)
 					defer waitGroup.Done()
 					if err := json.Unmarshal([]byte(*message.Body), &eventMessage); err != nil {
-						easyzap.Error(ctx, err, "[Event tracking] Error to parse message from queue. [Message Body: %v]", *message.Body)
+						easyzap.Error(ctx, err, "[event tracking] error to parse message from queue. [message body: %v].", *message.Body)
+
 						return
 					}
 					if eventMessage != nil {
 						if err := service.Handler(ctx, eventMessage); err != nil {
-							easyzap.Error(ctx, err, "[Event tracking] Failed to process event tracking message. [Error: %v]", err)
+							easyzap.Error(ctx, err, "[event tracking] error to process event tracking message.", err)
+
 							return
 						}
-						easyzap.Debug(ctx, "[Event tracking] Deleting message.")
+
 						if _, errorToDeleteMessage := awsClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 							QueueUrl:      &queueUrl,
 							ReceiptHandle: message.ReceiptHandle,
 						}); errorToDeleteMessage != nil {
-							easyzap.Debug(ctx, "[Event tracking] Failed to delete message.")
+							easyzap.Error(ctx, errorToDeleteMessage, "[event tracking] error to delete message.")
 						}
+
+						mv := []string{"success", ""}
+						metrics.EventTrackingListener.WithLabelValues(mv...).Inc()
+
 						return
 					}
 				}(sqsMessage.Messages[index])

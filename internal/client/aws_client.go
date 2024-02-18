@@ -1,7 +1,7 @@
 package client
 
 import (
-	"campaing-comsumer-service/internal/util"
+	"campaing-comsumer-service/internal/metrics"
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -11,10 +11,11 @@ import (
 )
 
 type Aws struct {
-	client *sqs.Client
+	client  *sqs.Client
+	metrics *metrics.Metrics
 }
 
-func NewAwsClient(awsURL, region string) *Aws {
+func NewAwsClient(metrics *metrics.Metrics, awsURL, region string) *Aws {
 	// customResolver is required here since we use localstack and need to point the aws url to localhost.
 	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
@@ -32,30 +33,27 @@ func NewAwsClient(awsURL, region string) *Aws {
 	}
 
 	return &Aws{
-		client: sqs.NewFromConfig(cfg),
+		client:  sqs.NewFromConfig(cfg),
+		metrics: metrics,
 	}
-}
-
-func (a *Aws) SendMessage(ctx context.Context, data interface{}, queue *string) error {
-	stringData, er := util.ParseToString(data)
-	if er == nil {
-		_, err := a.client.SendMessage(ctx, &sqs.SendMessageInput{
-			MessageBody: &stringData,
-			QueueUrl:    queue,
-		})
-		if err != nil {
-			easyzap.Error(ctx, err, "could not send message")
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (a *Aws) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
-	return a.client.ReceiveMessage(ctx, params)
+	msg, err := a.client.ReceiveMessage(ctx, params)
+	if err != nil {
+		mv := []string{"error", "receiving"}
+		a.metrics.EventTrackingListener.WithLabelValues(mv...).Inc()
+		return nil, err
+	}
+	return msg, nil
 }
 
 func (a *Aws) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
-	return a.client.DeleteMessage(ctx, params)
+	msg, err := a.client.DeleteMessage(ctx, params)
+	if err != nil {
+		mv := []string{"error", "delete"}
+		a.metrics.EventTrackingListener.WithLabelValues(mv...).Inc()
+		return nil, err
+	}
+	return msg, nil
 }
