@@ -60,7 +60,7 @@ func Init() {
 
 func setConfigDefaults() {
 	config.SetDefault("app.name", "campaing-consumer-api")
-	config.SetDefault("server.port", "8080")
+	config.SetDefault("server.port", "0.0.0.0:8080")
 	config.SetDefault("health.port", "0.0.0.0:8081")
 	config.SetDefault("timeLocation", "America/Sao_Paulo")
 	config.SetDefault("dataBase.driver", "postgres")

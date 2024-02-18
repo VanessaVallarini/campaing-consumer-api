@@ -8,6 +8,7 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/lockp111/go-easyzap"
+	"github.com/pkg/errors"
 )
 
 type Aws struct {
@@ -43,7 +44,7 @@ func (a *Aws) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInpu
 	if err != nil {
 		mv := []string{"error", "receiving"}
 		a.metrics.EventTrackingListener.WithLabelValues(mv...).Inc()
-		return nil, err
+		return nil, errors.Wrapf(err, "receiving message queue url %v", params.QueueUrl)
 	}
 	return msg, nil
 }
@@ -53,7 +54,7 @@ func (a *Aws) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput)
 	if err != nil {
 		mv := []string{"error", "delete"}
 		a.metrics.EventTrackingListener.WithLabelValues(mv...).Inc()
-		return nil, err
+		return nil, errors.Wrapf(err, "delete message queue url %v", params.QueueUrl)
 	}
 	return msg, nil
 }

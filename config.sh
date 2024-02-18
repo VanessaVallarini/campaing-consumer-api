@@ -2,7 +2,7 @@
 
 # Check if deployment name was provided
 if [ -z "$1" ]; then
-  echo "Error: No app name provided. Please provide the deployment name (ex: ads-ranking-api...)."
+  echo "Error: No app name provided. Please provide the deployment name (ex: campaing-consumer-api...)."
   exit 1
 fi
 

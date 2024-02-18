@@ -48,8 +48,6 @@ func EventTrackingListener(ctx context.Context, metrics *metrics.Metrics, awsCli
 					}
 					if eventMessage != nil {
 						if err := service.Handler(ctx, eventMessage); err != nil {
-							easyzap.Error(ctx, err, "[event tracking] error to process event tracking message.", err)
-
 							return
 						}
 

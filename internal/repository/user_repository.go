@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
+	"github.com/pkg/errors"
 )
 
 type User struct {
@@ -29,11 +30,11 @@ func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error)
 
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
-		easyzap.Warn("select user %v cancel by context. msg: %v", param, err)
 		mv := []string{"GetById", "error", "starts_transaction"}
 		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
-
-		return model.User{}, err
+		errWrap := errors.Wrapf(err, "select user %v cancel by context", param)
+		easyzap.Warn(ctx, errWrap, "select user cancel by context")
+		return model.User{}, errWrap
 	}
 
 	var user model.User
@@ -43,29 +44,24 @@ func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error)
 	err = row.Scan(&user.Id, &user.Email, &user.CreatedAt, &user.UpdatedAt, &user.Active)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			easyzap.Warn("no lines found for user_id: %v", param, err)
 			tx.Rollback()
-			mv := []string{"GetById", "error", "no_rows"}
-			c.metrics.UserRepository.WithLabelValues(mv...).Inc()
-
 			return model.User{}, nil
-
 		}
-		easyzap.Errorf("scan user %v fail. msg: %v", param, err)
 		tx.Rollback()
 		mv := []string{"GetById", "error", "scan"}
 		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
-
-		return model.User{}, err
+		errWrap := errors.Wrapf(err, "scan user %v fail", param)
+		easyzap.Error(ctx, errWrap, "scan user fail")
+		return model.User{}, errWrap
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		easyzap.Warn("select user %v fail. msg: %v", param, err)
 		mv := []string{"GetById", "error", "commit"}
 		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
-
-		return model.User{}, err
+		errWrap := errors.Wrapf(err, "select user id %v fail", param)
+		easyzap.Error(ctx, errWrap, "select user fail")
+		return model.User{}, errWrap
 	}
 
 	mv := []string{"GetById", "success", ""}

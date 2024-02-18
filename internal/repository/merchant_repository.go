@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
+	"github.com/pkg/errors"
 )
 
 type Merchant struct {
@@ -29,11 +30,11 @@ func (c *Merchant) GetById(ctx context.Context, param uuid.UUID) (model.Merchant
 
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
-		easyzap.Warn("select merchant %v cancel by context. msg: %v", param, err)
 		mv := []string{"GetById", "error", "starts_transaction"}
 		c.metrics.MerchantRepository.WithLabelValues(mv...).Inc()
-
-		return model.Merchant{}, err
+		errWrap := errors.Wrapf(err, "select merchant %v cancel by context", param)
+		easyzap.Warn(ctx, errWrap, "select merchant cancel by context")
+		return model.Merchant{}, errWrap
 	}
 
 	var merchant model.Merchant
@@ -42,28 +43,24 @@ func (c *Merchant) GetById(ctx context.Context, param uuid.UUID) (model.Merchant
 	err = row.Scan(&merchant.Id, &merchant.UserId, &merchant.SlugId, &merchant.CreatedAt, &merchant.UpdatedAt, &merchant.Name, &merchant.Active, &merchant.Lat, &merchant.Long)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			easyzap.Warn("no lines found merchant for merchant_id: %v", param, err)
 			tx.Rollback()
-			mv := []string{"GetById", "error", "no_rows"}
-			c.metrics.MerchantRepository.WithLabelValues(mv...).Inc()
-
 			return model.Merchant{}, nil
 		}
-		easyzap.Errorf("scan merchant %v fail. msg: %v", param, err)
 		tx.Rollback()
 		mv := []string{"GetById", "error", "scan"}
 		c.metrics.MerchantRepository.WithLabelValues(mv...).Inc()
-
-		return model.Merchant{}, err
+		errWrap := errors.Wrapf(err, "scan merchant %v fail", param)
+		easyzap.Error(ctx, errWrap, "scan merchant fail")
+		return model.Merchant{}, errWrap
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		easyzap.Warn("select merchant id %v fail. msg: %v", param, err)
 		mv := []string{"GetById", "error", "commit"}
 		c.metrics.MerchantRepository.WithLabelValues(mv...).Inc()
-
-		return model.Merchant{}, err
+		errWrap := errors.Wrapf(err, "select merchant id %v fail", param)
+		easyzap.Error(ctx, errWrap, "select merchant fail")
+		return model.Merchant{}, errWrap
 	}
 
 	mv := []string{"GetById", "success", ""}

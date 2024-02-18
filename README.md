@@ -57,9 +57,9 @@ Once this is done, open another terminal and start the docker compose with depen
 and use to start the app we can use:
 | Command               | Environment           |
 |-----------------------|-----------------------|
-| make run-api-local    | ads-ranking-api local |
-| make run-api-dev      | ads-ranking-api dev   |
-| make run-api-prod     | ads-ranking-api prod  |
+| make run-api-local    | campaing-consumer-api local |
+| make run-api-dev      | campaing-consumer-api dev   |
+| make run-api-prod     | campaing-consumer-api prod  |
 
 ### SQS Comands
 #### Clear SQS
@@ -73,10 +73,10 @@ aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://sqs
 #### Send message updated campaing
 - Use the campaign id created in the previous step
 ```
-aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/queue_campaing --message-body '{"id":"569a70c2-9a21-4a6d-b468-b2c2964d9c0e","user_id":"c3eeb9b0-051c-4803-b0a4-f6060bcb40d9","slug_id":"f43e580b-ffb2-490d-aea1-b2f0435d624b","merchant_id":"2ed8b772-1714-46de-98ab-c2653bb03d78","active":true,"lat":45.6085,"long":-73.5493,"clicks":15,"impressions":50,"action":"U"}'
+aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/queue_campaing --message-body '{"id":"998aed68-e774-463c-b25c-08fddb23141a","user_id":"c3eeb9b0-051c-4803-b0a4-f6060bcb40d9","slug_id":"f43e580b-ffb2-490d-aea1-b2f0435d624b","merchant_id":"2ed8b772-1714-46de-98ab-c2653bb03d78","active":true,"lat":45.6085,"long":-73.5493,"clicks":15,"impressions":50,"action":"U"}'
 ```
 #### Send message delete campaing
 - Use the campaign id created in the previous step
 ```
-aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/queue_campaing --message-body '{"id":"569a70c2-9a21-4a6d-b468-b2c2964d9c0e","action":"D"}'
+aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/queue_campaing --message-body '{"id":"998aed68-e774-463c-b25c-08fddb23141a","action":"D"}'
 ```

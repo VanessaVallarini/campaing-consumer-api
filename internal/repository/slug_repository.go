@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lockp111/go-easyzap"
+	"github.com/pkg/errors"
 )
 
 type Slug struct {
@@ -29,11 +30,11 @@ func (c *Slug) GetById(ctx context.Context, param uuid.UUID) (model.Slug, error)
 
 	tx, err := c.conn.BeginTx(ctx, nil)
 	if err != nil {
-		easyzap.Errorf("select slug %v cancel by context. msg: %v", param, err)
 		mv := []string{"GetById", "error", "starts_transaction"}
 		c.metrics.SlugRepository.WithLabelValues(mv...).Inc()
-
-		return model.Slug{}, err
+		errWrap := errors.Wrapf(err, "select slug %v cancel by context", param)
+		easyzap.Warn(ctx, errWrap, "select slug cancel by context")
+		return model.Slug{}, errWrap
 	}
 
 	var slug model.Slug
@@ -42,30 +43,24 @@ func (c *Slug) GetById(ctx context.Context, param uuid.UUID) (model.Slug, error)
 	err = row.Scan(&slug.Id, &slug.UserId, &slug.CreatedAt, &slug.UpdatedAt, &slug.Active, &slug.Lat, &slug.Long)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			easyzap.Warn("no lines found for slug_id: %v", param, err)
 			tx.Rollback()
-			mv := []string{"GetById", "error", "no_rows"}
-			c.metrics.SlugRepository.WithLabelValues(mv...).Inc()
-
 			return model.Slug{}, nil
-
 		}
-		easyzap.Errorf("scan slug %v fail. msg: %v", param, err)
 		tx.Rollback()
 		mv := []string{"GetById", "error", "scan"}
 		c.metrics.SlugRepository.WithLabelValues(mv...).Inc()
-
-		return model.Slug{}, err
-
+		errWrap := errors.Wrapf(err, "scan slug %v fail", param)
+		easyzap.Error(ctx, errWrap, "scan slug fail")
+		return model.Slug{}, errWrap
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		easyzap.Errorf("select slug %v fail. msg: %v", param, err)
 		mv := []string{"GetById", "error", "commit"}
 		c.metrics.SlugRepository.WithLabelValues(mv...).Inc()
-
-		return model.Slug{}, err
+		errWrap := errors.Wrapf(err, "select slug id %v fail", param)
+		easyzap.Error(ctx, errWrap, "select slug fail")
+		return model.Slug{}, errWrap
 	}
 
 	mv := []string{"GetById", "success", ""}
