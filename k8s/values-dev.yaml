@@ -13,12 +13,15 @@ appConfigFile:
           port: 0.0.0.0:8081
         timeLocation: America/Sao_Paulo
         database:
-          driver: postgres
           host: pg-campaing-consumer-api.sandbox.com
           port: 5432
-          user: ads-campaing-app
-          name: ads-campaing-db
-          connMax: 20
+          username: ads-campaing-app
+          database: ads-campaing-db
+          conn:
+            min: 1
+            max: 1
+            lifetime: 120s
+            idletime: 120s
         aws:
           url: https://sqs.us-east-1.amazonaws.com
           region: us-east-1

@@ -30,23 +30,32 @@ func main() {
 	//metrics
 	metrics := metrics.NewMetrics()
 
-	//clients
-	db := repository.NewPostgresClient(dbCfg)
-	defer db.Close()
+	//database
+	easyzap.Info(ctx, "Creating pool")
+	db, err := repository.CreatePool(ctx, &dbCfg)
+	if err != nil {
+		easyzap.Fatal(ctx, err, "error when start pool")
+	}
+	err = db.Ping(ctx)
+	if err != nil {
+		easyzap.Fatal(ctx, err, "failed to ping pool")
+	}
 
+	//clients
 	awsClient := client.NewAwsClient(metrics, awsCfg.Url, awsCfg.Region)
 	if awsClient == nil {
 		easyzap.Panic("failed creating aws client")
 	}
 
 	//repositories
+	transactios := repository.NewTransactionDao(metrics, db)
 	campaingRepository := repository.NewCampaingRepository(metrics, db)
 	userRepository := repository.NewUserRepository(metrics, db)
 	slugRepository := repository.NewSlugRepository(metrics, db)
 	merchantRepository := repository.NewMerchantRepository(metrics, db)
 
 	//services
-	campaingService := service.NewCampaignService(campaingRepository, userRepository, slugRepository, merchantRepository)
+	campaingService := service.NewCampaignService(transactios, campaingRepository, userRepository, slugRepository, merchantRepository)
 
 	//listener
 	go listener.EventTrackingListener(ctx, metrics, awsClient, campaingService, awsCfg.QueueCampaing)

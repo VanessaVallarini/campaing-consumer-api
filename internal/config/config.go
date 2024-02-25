@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -19,15 +18,19 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	PostgresDriver  string
-	User            string
-	Host            string
-	Port            int
-	Password        string
-	DbName          string
-	Conn            int
-	DatabaseConnStr string
-	ConnMax         int
+	Host     string
+	Port     int
+	Username string
+	Database string
+	Password string
+	Conn     Conn
+}
+
+type Conn struct {
+	Min      int    `mapstructure:"min"`
+	Max      int    `mapstructure:"max"`
+	Lifetime string `mapstructure:"lifetime"`
+	IdleTime string `mapstructure:"idletime"`
 }
 
 type AwsConfig struct {
@@ -44,8 +47,6 @@ func Init() {
 	config.SetConfigName("configuration")
 	config.SetConfigType("yml")
 
-	setConfigDefaults()
-
 	if err := config.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			// Config file was found but another error was produced
@@ -58,54 +59,26 @@ func Init() {
 	config.AutomaticEnv()
 }
 
-func setConfigDefaults() {
-	config.SetDefault("app.name", "campaing-consumer-api")
-	config.SetDefault("server.port", "0.0.0.0:8080")
-	config.SetDefault("health.port", "0.0.0.0:8081")
-	config.SetDefault("timeLocation", "America/Sao_Paulo")
-	config.SetDefault("dataBase.driver", "postgres")
-	config.SetDefault("dataBase.host", "pg-campaing-consumer-api.sandbox.com")
-	config.SetDefault("dataBase.port", "5432")
-	config.SetDefault("dataBase.user", "ads-campaing-app")
-	config.SetDefault("dataBase.name", "ads-campaing-db")
-	config.SetDefault("dataBase.connMax", "20")
-	config.SetDefault("aws.url", "https://sqs.us-east-1.amazonaws.com")
-	config.SetDefault("aws.region", "us-east-1")
-	config.SetDefault("aws.sqs.queue", "https://sqs.us-east-1.amazonaws.com/queue_campaing")
-}
-
 func GetDatabaseConfig() DatabaseConfig {
 	if err := config.BindEnv("dataBase.password", "DB_PASS_CAMPAING_CONSUMER_API"); err != nil {
 		errorx.Panic(err)
 	}
 
 	databaseConfig := DatabaseConfig{
-		PostgresDriver: config.GetString("dataBase.driver"),
-		User:           config.GetString("dataBase.user"),
-		Host:           config.GetString("dataBase.host"),
-		Port:           config.GetInt("dataBase.port"),
-		DbName:         config.GetString("dataBase.name"),
-		ConnMax:        config.GetInt("dataBase.connMax"),
-		Password:       config.GetString("dataBase.password"),
+		Host:     config.GetString("database.host"),
+		Port:     config.GetInt("database.port"),
+		Username: config.GetString("database.username"),
+		Database: config.GetString("database.database"),
+		Password: config.GetString("database.password"),
+		Conn: Conn{
+			Min:      config.GetInt("database.conn.min"),
+			Max:      config.GetInt("database.conn.max"),
+			Lifetime: config.GetString("database.conn.lifetime"),
+			IdleTime: config.GetString("database.conn.idletime"),
+		},
 	}
 
-	databaseConfig.DatabaseConnStr = buildDatabaseConnString(databaseConfig)
-
 	return databaseConfig
-}
-
-func buildDatabaseConnString(dbCfg DatabaseConfig) string {
-	connectionDSN := fmt.Sprintf("user=%s host=%s port=%v  "+
-		"password=%s dbname=%s connect_timeout=%v sslmode=disable",
-		dbCfg.User,
-		dbCfg.Host,
-		dbCfg.Port,
-		dbCfg.Password,
-		dbCfg.DbName,
-		dbCfg.Conn,
-	)
-
-	return connectionDSN
 }
 
 func GetAwsConfig() AwsConfig {

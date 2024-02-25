@@ -4,63 +4,44 @@ import (
 	"campaing-comsumer-service/internal/metrics"
 	"campaing-comsumer-service/internal/model"
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lockp111/go-easyzap"
 	"github.com/pkg/errors"
 )
 
 type User struct {
-	conn    *sql.DB
+	db      *pgxpool.Pool
 	metrics *metrics.Metrics
 }
 
-func NewUserRepository(metrics *metrics.Metrics, conn *sql.DB) *User {
+func NewUserRepository(metrics *metrics.Metrics, db *pgxpool.Pool) *User {
 	return &User{
-		conn:    conn,
+		db:      db,
 		metrics: metrics,
 	}
 }
 
 func (c *User) GetById(ctx context.Context, param uuid.UUID) (model.User, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
-
-	tx, err := c.conn.BeginTx(ctx, nil)
-	if err != nil {
-		mv := []string{"GetById", "error", "starts_transaction"}
-		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
-		errWrap := errors.Wrapf(err, "select user %v cancel by context", param)
-		easyzap.Warn(ctx, errWrap, "select user cancel by context")
-		return model.User{}, errWrap
-	}
 
 	var user model.User
 	query := "select * from " + "\"user\"" + " where id = $1"
-	row := tx.QueryRowContext(ctx, query, param)
+	rows := c.db.QueryRow(ctx, query, param)
 
-	err = row.Scan(&user.Id, &user.Email, &user.CreatedAt, &user.UpdatedAt, &user.Active)
+	err := rows.Scan(&user.Id, &user.Email, &user.CreatedAt, &user.UpdatedAt, &user.Active)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			tx.Rollback()
+		if err.Error() == pgx.ErrNoRows.Error() {
 			return model.User{}, nil
 		}
-		tx.Rollback()
 		mv := []string{"GetById", "error", "scan"}
 		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
 		errWrap := errors.Wrapf(err, "scan user %v fail", param)
-		easyzap.Error(ctx, errWrap, "scan user fail")
-		return model.User{}, errWrap
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		mv := []string{"GetById", "error", "commit"}
-		c.metrics.UserRepository.WithLabelValues(mv...).Inc()
-		errWrap := errors.Wrapf(err, "select user id %v fail", param)
-		easyzap.Error(ctx, errWrap, "select user fail")
+		easyzap.Errorf("scan user %v fail. msg: %v", param, errWrap)
 		return model.User{}, errWrap
 	}
 

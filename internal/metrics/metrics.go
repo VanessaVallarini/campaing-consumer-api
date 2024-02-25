@@ -17,6 +17,7 @@ type Metrics struct {
 	MerchantRepository    *prometheus.CounterVec
 	SlugRepository        *prometheus.CounterVec
 	UserRepository        *prometheus.CounterVec
+	Transaction           *prometheus.CounterVec
 }
 
 func NewMetrics() *Metrics {
@@ -46,6 +47,11 @@ func NewMetrics() *Metrics {
 			Help: "CRUD user repository",
 		}, []string{"method", "status", "details"})
 		prometheus.MustRegister(metricConfigs.UserRepository)
+		metricConfigs.Transaction = prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "transaction",
+			Help: "Create, update and delete in repository",
+		}, []string{"method", "status", "details"})
+		prometheus.MustRegister(metricConfigs.Transaction)
 	})
 	return metricConfigs
 }
